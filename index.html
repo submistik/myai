@@ -5,14 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>🤖 ИИ на C++</title>
   <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-
+    * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      font-family: 'Segoe UI', sans-serif;
       background: linear-gradient(135deg, #1e3c72, #2a5298);
       color: #fff;
       min-height: 100vh;
@@ -21,22 +16,13 @@
       align-items: center;
       padding: 40px 20px;
     }
-
     h1 {
       font-size: 2.5em;
       margin-bottom: 10px;
       text-shadow: 0 2px 10px rgba(0,0,0,0.2);
       animation: fadeIn 1s ease-out;
     }
-
-    p {
-      font-size: 1.1em;
-      opacity: 0.9;
-      margin-bottom: 30px;
-      animation: fadeIn 1.5s ease-out;
-    }
-
-    .chat-container {
+    .chat-box {
       width: 100%;
       max-width: 800px;
       background: rgba(255, 255, 255, 0.1);
@@ -45,100 +31,67 @@
       overflow: hidden;
       box-shadow: 0 15px 35px rgba(0,0,0,0.2);
       border: 1px solid rgba(255,255,255,0.2);
+      margin: 20px 0;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
     }
-
-    #output {
+    #messages {
+      flex: 1;
       padding: 20px;
-      background: rgba(0,0,0,0.2);
-      border-radius: 15px;
-      margin: 20px;
-      font-size: 1.1em;
-      line-height: 1.6;
-      min-height: 60px;
-      white-space: pre-wrap;
-      animation: slideUp 0.5s ease-out;
-      border: 1px solid rgba(255,255,255,0.1);
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
     }
-
-    #input {
-      padding: 15px 20px;
-      width: 70%;
+    .msg {
+      max-width: 80%;
+      padding: 12px 18px;
+      border-radius: 18px;
+      line-height: 1.5;
+    }
+    .user { align-self: flex-end; background: #0088ff; color: white; }
+    .ai { align-self: flex-start; background: #e9e9eb; color: #000; }
+    .input-area {
+      display: flex;
+      padding: 15px;
+      background: rgba(0,0,0,0.1);
+      border-top: 1px solid rgba(255,255,255,0.1);
+    }
+    #user-input {
+      flex: 1;
+      padding: 15px;
       border: none;
       border-radius: 50px;
-      font-size: 1em;
       outline: none;
-      margin-right: 10px;
-      transition: all 0.3s ease;
     }
-
-    #input:focus {
-      box-shadow: 0 0 15px rgba(0, 136, 255, 0.5);
-    }
-
     button {
+      margin-left: 10px;
       padding: 15px 25px;
-      background: #0088ff;
+      background: #00cc66;
       color: white;
       border: none;
       border-radius: 50px;
       cursor: pointer;
-      font-size: 1em;
-      transition: all 0.3s ease;
-      box-shadow: 0 5px 15px rgba(0, 136, 255, 0.4);
+      font-weight: bold;
     }
-
-    button:hover {
-      background: #0066cc;
-      transform: translateY(-2px);
-      box-shadow: 0 8px 20px rgba(0, 136, 255, 0.6);
-    }
-
-    button:active {
-      transform: translateY(0);
-    }
-
-    /* Анимации */
+    button:hover { background: #00aa55; }
     @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(-20px); }
+      from { opacity: 0; transform: translateY(-10px); }
       to { opacity: 1; transform: translateY(0); }
-    }
-
-    @keyframes slideUp {
-      from { opacity: 0; transform: translateY(20px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-
-    /* Эффект печати */
-    .typing {
-      border-right: 2px solid #0088ff;
-      animation: blink 0.7s step-end infinite, type 3.5s steps(60) 1s forwards;
-      white-space: nowrap;
-      overflow: hidden;
-      width: 0;
-    }
-
-    @keyframes type {
-      from { width: 0; }
-      to { width: 100%; }
-    }
-
-    @keyframes blink {
-      0%, 100% { border-color: transparent; }
-      50% { border-color: #0088ff; }
     }
   </style>
 </head>
 <body>
   <h1>🤖 Мой ИИ на C++</h1>
-  <p>Введите запрос (например: "напиши код на python")</p>
-
-  <div class="chat-container">
-    <pre id="output">-</pre>
-  </div>
-
-  <div style="display: flex; margin-top: 20px; width: 100%; max-width: 800px;">
-    <input type="text" id="input" placeholder="Ваш запрос" />
-    <button onclick="askAI()">Отправить</button>
+  <div class="chat-box">
+    <div id="messages">
+      <div class="msg ai">Привет! 👋 Я — ИИ на C++, работаю прямо в браузере. Могу написать любую программу или просто поболтать. О чём мечтаете сегодня?</div>
+    </div>
+    <div class="input-area">
+      <input type="text" id="user-input" placeholder="Введите запрос..." />
+      <button onclick="send()">Отправить</button>
+    </div>
   </div>
 
   <!-- Подключение WebAssembly -->
@@ -146,44 +99,41 @@
   <script>
     let AI;
 
-    // Загружаем модуль
+    // Загружаем ИИ
     createAI().then(module => {
       AI = new module.SmartAI();
-      console.log("ИИ готов!");
+      console.log("ИИ загружен!");
     });
 
-    function askAI() {
-      const input = document.getElementById("input").value.trim();
-      if (!input) return;
-      if (!AI) {
-        alert("ИИ загружается, подождите...");
-        return;
-      }
+    // Отправка сообщения
+    function send() {
+      const input = document.getElementById("user-input");
+      const text = input.value.trim();
+      if (!text || !AI) return;
 
-      const output = document.getElementById("output");
-      const question = input;
-      const answer = AI.chat(question);
+      // Показываем сообщение пользователя
+      addMessage(text, "user");
+      
+      // Получаем ответ от ИИ
+      const response = AI.chat(text);
+      setTimeout(() => addMessage(response, "ai"), 500);
 
-      // Эффект печати
-      output.className = 'typing';
-      output.textContent = '';
+      input.value = "";
+    }
 
-      setTimeout(() => {
-        let i = 0;
-        output.textContent = '';
-        output.className = '';
-        const timer = setInterval(() => {
-          output.textContent += answer.charAt(i);
-          if (i >= answer.length - 1) clearInterval(timer);
-          i++;
-          output.scrollTop = output.scrollHeight; // прокрутка
-        }, 30);
-      }, 1000);
+    // Добавление сообщения в чат
+    function addMessage(text, sender) {
+      const messages = document.getElementById("messages");
+      const msg = document.createElement("div");
+      msg.className = `msg ${sender}`;
+      msg.textContent = text;
+      messages.appendChild(msg);
+      messages.scrollTop = messages.scrollHeight;
     }
 
     // Отправка по Enter
-    document.getElementById("input").addEventListener("keypress", function(e) {
-      if (e.key === "Enter") askAI();
+    document.getElementById("user-input").addEventListener("keypress", e => {
+      if (e.key === "Enter") send();
     });
   </script>
 </body>
